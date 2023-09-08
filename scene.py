@@ -1,8 +1,10 @@
 import typing
 from PyQt6 import QtGui
-from PyQt6.QtCore import QRect, QPoint, Qt
-from PyQt6.QtGui import QPainter, QBrush, QPen, QColor
+from PyQt6.QtCore import QRect, QPoint, Qt, QRectF
+from PyQt6.QtGui import QPainter, QBrush, QPen, QColor, QPixmap
 from PyQt6.QtWidgets import QMainWindow
+import numpy as np
+from PIL import Image
 
 from map import Map
 from settings import MAP_WIDTH, MAP_HEIGHT
@@ -20,23 +22,12 @@ class MainWindow(QMainWindow):
         self.map = Map()
 
     def paint_resistance(self, painter: QPainter):
-        painter.setPen(QPen(Qt.GlobalColor.transparent, 0,
-                            Qt.PenStyle.SolidLine))
-
-        for x in range(MAP_WIDTH - 1):
-            for y in range(MAP_HEIGHT - 1):
-                color = self.map.get_color(x, y)
-                painter.setBrush(
-                    QBrush(
-                        QColor(*color),
-                        Qt.BrushStyle.SolidPattern)
-                )
-                painter.drawRect(
-                    QRect(
-                        QPoint(x - 1, y - 1),
-                        QPoint(x, y)
-                    )
-                )
+        pixmap = self.map.get_pixmap()
+        painter.drawTiledPixmap(
+            QRect(0, 0, MAP_WIDTH, MAP_HEIGHT),
+            pixmap,
+            QPoint(0, 0)
+        )
 
     def paintEvent(self, e):
         painter = QPainter(self)

@@ -1,3 +1,5 @@
+from PyQt6.QtGui import QImage, QPixmap, QColor
+
 from settings import MAP_WIDTH, MAP_HEIGHT, GRADIENT_RESISTANCE_FILL
 
 
@@ -9,20 +11,15 @@ class Map:
     RESISTANCE_CENTER = 0.0
 
     def __init__(self):
-        self.w = MAP_WIDTH - 1
-        self.h = MAP_HEIGHT - 1
+        self.w = MAP_WIDTH
+        self.h = MAP_HEIGHT
         self._map = {
             x: ({
                 y: self.RESISTANCE_CENTER for y in range(self.h)
             })
             for x in range(self.w)
         }
-        self._colors = {
-            x: ({
-                y: (255, 255, 255) for y in range(self.h)
-            })
-            for x in range(self.w)
-        }
+        self._image = QImage(MAP_WIDTH, MAP_HEIGHT, QImage.Format.Format_ARGB32)
         if GRADIENT_RESISTANCE_FILL:
             self.init_gradient()
 
@@ -41,13 +38,13 @@ class Map:
             green_part = 255
             red_part = 255 + 255 * resistance / self.RESISTANCE_RANGE
 
-        self._colors[x][y] = int(red_part), int(green_part), 0
+        self._image.setPixel(x, y, QColor(int(red_part), int(green_part), 0).rgb())
 
     def get_resistance(self, x: int, y: int) -> float:
         return self._map[x][y]
 
-    def get_color(self, x: int, y: int) -> float:
-        return self._colors[x][y]
+    def get_pixmap(self) -> QPixmap:
+        return QPixmap.fromImage(self._image)
 
     def init_gradient(self):
         x_inc = self.RESISTANCE_RANGE * 2 / self.w
