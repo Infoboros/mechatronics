@@ -65,6 +65,7 @@ class MainWindow(QMainWindow):
             if (datetime.now() - prev_frame).microseconds < FRAME_TIME:
                 continue
             prev_frame = datetime.now()
+            self.car.step()
             if self.active_events['forward']:
                 self.car.forward()
 

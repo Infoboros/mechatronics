@@ -1,14 +1,51 @@
-from PyQt6.QtCore import QRectF, QPoint, QRect, QPointF
-from PyQt6.QtGui import QMatrix3x3, QMatrix4x4, QPainter, QColor, QPolygon, QPolygonF
+from PyQt6.QtCore import QPointF
+from PyQt6.QtGui import QMatrix4x4, QPainter, QColor
 
 from settings import START_POSITION_CAR, CAR_WIDTH, CAR_LENGTH, WHEEL_WIDTH, WHEEL_LENGTH
 
 
 class Car:
+    MAX_SPEED = 1000
+    MAX_ANGEL = 500
+
     def __init__(self):
         self.body, self.wheels = self.__init_model()
 
         self.projection = self.__init_matrix()
+
+        self.direction = 0
+        self.angel_direction = 0
+
+    def left_wheel(self):
+        if self.direction < self.MAX_SPEED:
+            self.direction += 20
+        if self.angel_direction < self.MAX_ANGEL:
+            self.angel_direction += 20
+
+    def right_wheel(self):
+        if self.direction < self.MAX_SPEED:
+            self.direction += 20
+        if self.angel_direction > -self.MAX_ANGEL:
+            self.angel_direction -= 20
+
+    def reverse_wheel(self):
+        if self.direction > -self.MAX_SPEED:
+            self.direction -= 50
+
+    @staticmethod
+    def friction_force(value: int):
+        if value > 0:
+            return value - 5
+        if value < 0:
+            return value + 5
+        return value
+
+    def step(self):
+        self.direction = self.friction_force(self.direction)
+        self.angel_direction = self.friction_force(self.angel_direction)
+
+        self.projection.translate(0, -self.direction / 500.)
+        self.projection.rotate(self.angel_direction / 500., 0, 0, 1)
 
     @staticmethod
     def __init_matrix() -> QMatrix4x4:
@@ -91,13 +128,14 @@ class Car:
         )
 
     def forward(self):
-        self.projection.translate(0, -0.1)
+        self.left_wheel()
+        self.right_wheel()
 
     def back(self):
-        self.projection.translate(0, 0.1)
+        self.reverse_wheel()
 
     def right(self):
-        self.projection.rotate(0.1, 0, 0, 1)
+        self.left_wheel()
 
     def left(self):
-        self.projection.rotate(-0.1, 0, 0, 1)
+        self.right_wheel()
