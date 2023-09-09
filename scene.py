@@ -12,6 +12,7 @@ from PIL import Image
 from car import Car
 from map import Map
 from settings import MAP_WIDTH, MAP_HEIGHT, FRAME_TIME
+from trace import TraceCar
 
 
 class MainWindow(QMainWindow):
@@ -24,7 +25,7 @@ class MainWindow(QMainWindow):
         self.setFixedHeight(MAP_HEIGHT)
 
         self.map = Map()
-        self.car = Car(self.map, 'black')
+        self.cars = []
 
         self.run = False
         self.active_events = {
@@ -51,7 +52,8 @@ class MainWindow(QMainWindow):
     def paintEvent(self, e):
         painter = QPainter(self)
         self.paint_resistance(painter)
-        self.car.draw(painter)
+        for car in self.cars:
+            car.draw(painter)
 
     def mouseReleaseEvent(self, a0: typing.Optional[QtGui.QMouseEvent]) -> None:
         point = a0.pos()
@@ -65,21 +67,19 @@ class MainWindow(QMainWindow):
             if (datetime.now() - prev_frame).microseconds < FRAME_TIME:
                 continue
             prev_frame = datetime.now()
-            self.car.step()
-            if self.active_events['forward']:
-                self.car.forward()
+            for car in self.cars:
+                car.step()
+                if self.active_events['forward']:
+                    car.forward()
 
-            if self.active_events['left']:
-                self.car.left()
+                if self.active_events['left']:
+                    car.left()
 
-            if self.active_events['right']:
-                self.car.right()
+                if self.active_events['right']:
+                    car.right()
 
-            if self.active_events['back']:
-                self.car.back()
-
-            center = self.car.get_center()
-            self.map.set_trace(center)
+                if self.active_events['back']:
+                    car.back()
 
             self.update()
             QEventLoop().processEvents(QEventLoop.ProcessEventsFlag.AllEvents)
@@ -95,19 +95,22 @@ class MainWindow(QMainWindow):
                 self.activate_event('right')
             elif key == 16777237:
                 self.activate_event('back')
-
+        # t
+        if key == 84:
+            self.cars.append(
+                TraceCar(self.map, 'black', True)
+            )
+            self.update()
+        # y
+        if key == 89:
+            self.cars.append(
+                TraceCar(self.map, 'blue')
+            )
+            self.update()
+        # z
         if key == 90:
-            self.map = Map()
-            self.map.init_zero()
-            self.car = Car(self.map, 'black')
-            self.update()
-
-        if key == 71:
-            self.map = Map()
-            self.map.init_gradient()
-            self.car = Car(self.map, 'black')
-            self.update()
-
+            self.cars = []
+        # space
         if key == 32:
             self.start()
 

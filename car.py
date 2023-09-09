@@ -10,9 +10,10 @@ class Car:
     MAX_ANGEL = 500
     FRICTION_CONTACT_RADIUS = WHEEL_WIDTH / 2
 
-    def __init__(self, map: Map, trace_color: str):
+    def __init__(self, map: Map, trace_color: str, with_abs: bool = False):
         self.map = map
         self.trace_color = trace_color
+        self.with_abs = with_abs
         self.body, self.wheels, self.left_wheel_center, self.right_wheel_center = self.__init_model()
 
         self.projection = self.__init_matrix()
@@ -22,15 +23,15 @@ class Car:
 
     def left_wheel(self):
         if self.direction < self.MAX_SPEED:
-            self.direction += 20
+            self.direction += 15
         if self.angel_direction < self.MAX_ANGEL:
-            self.angel_direction += 20
+            self.angel_direction += 5
 
     def right_wheel(self):
         if self.direction < self.MAX_SPEED:
-            self.direction += 20
+            self.direction += 15
         if self.angel_direction > -self.MAX_ANGEL:
-            self.angel_direction -= 20
+            self.angel_direction -= 5
 
     def reverse_wheel(self):
         if self.direction > -self.MAX_SPEED:
@@ -43,11 +44,11 @@ class Car:
         left_friction_c = self.map.get_resistance(
             left_friction_point.x(),
             left_friction_point.y()
-        )
+        ) if not self.with_abs else 0
         right_friction_c = self.map.get_resistance(
             right_friction_point.x(),
             right_friction_point.y()
-        )
+        ) if not self.with_abs else 0
 
         friction_c_avg = (
                                  (left_friction_c + right_friction_c) / 2
@@ -65,11 +66,11 @@ class Car:
             return value
 
         new_angel = abs_diff(self.angel_direction, 1)
-        new_angel += right_friction_c / 100
-        new_angel -= left_friction_c / 100
+        new_angel += right_friction_c / 10
+        new_angel -= left_friction_c / 10
 
         return \
-            abs_diff(self.direction, 5 * friction_c_avg), \
+            abs_diff(self.direction, 10 * friction_c_avg), \
             new_angel
 
     def step(self):
@@ -151,7 +152,7 @@ class Car:
         return list(map(self.map_point, points))
 
     def draw(self, painter: QPainter):
-        painter.setBrush(QColor('purple'))
+        painter.setBrush(QColor(self.trace_color))
         painter.drawPolygon(
             self.map_polygon(self.body)
         )

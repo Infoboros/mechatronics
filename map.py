@@ -33,11 +33,11 @@ class Map:
         self._map[x][y] = resistance
 
         if resistance > 0:
-            green_part = 255
-            red_part = 255 - 255 * resistance / self.RESISTANCE_RANGE
-        else:
-            green_part = 255 + 255 * resistance / self.RESISTANCE_RANGE
+            green_part = 255 - 255 * resistance / self.RESISTANCE_RANGE
             red_part = 255
+        else:
+            green_part = 255
+            red_part = 255 + 255 * resistance / self.RESISTANCE_RANGE
 
         self._image.setPixel(x, y, QColor(int(red_part), int(green_part), 0).rgb())
 
