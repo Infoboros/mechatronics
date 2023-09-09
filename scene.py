@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
         self.setFixedHeight(MAP_HEIGHT)
 
         self.map = Map()
-        self.car = Car()
+        self.car = Car(self.map, 'black')
 
         self.run = False
         self.active_events = {
@@ -78,6 +78,9 @@ class MainWindow(QMainWindow):
             if self.active_events['back']:
                 self.car.back()
 
+            center = self.car.get_center()
+            self.map.set_trace(center)
+
             self.update()
             QEventLoop().processEvents(QEventLoop.ProcessEventsFlag.AllEvents)
 
@@ -92,6 +95,18 @@ class MainWindow(QMainWindow):
                 self.activate_event('right')
             elif key == 16777237:
                 self.activate_event('back')
+
+        if key == 90:
+            self.map = Map()
+            self.map.init_zero()
+            self.car = Car(self.map, 'black')
+            self.update()
+
+        if key == 71:
+            self.map = Map()
+            self.map.init_gradient()
+            self.car = Car(self.map, 'black')
+            self.update()
 
         if key == 32:
             self.start()

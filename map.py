@@ -1,3 +1,4 @@
+from PyQt6.QtCore import QPointF
 from PyQt6.QtGui import QImage, QPixmap, QColor
 
 from settings import MAP_WIDTH, MAP_HEIGHT, GRADIENT_RESISTANCE_FILL
@@ -32,16 +33,19 @@ class Map:
         self._map[x][y] = resistance
 
         if resistance > 0:
-            green_part = 255 - 255 * resistance / self.RESISTANCE_RANGE
-            red_part = 255
-        else:
             green_part = 255
-            red_part = 255 + 255 * resistance / self.RESISTANCE_RANGE
+            red_part = 255 - 255 * resistance / self.RESISTANCE_RANGE
+        else:
+            green_part = 255 + 255 * resistance / self.RESISTANCE_RANGE
+            red_part = 255
 
         self._image.setPixel(x, y, QColor(int(red_part), int(green_part), 0).rgb())
 
     def get_resistance(self, x: int, y: int) -> float:
-        return self._map[x][y]
+        try:
+            return self._map[x][y]
+        except KeyError:
+            return 0
 
     def get_pixmap(self) -> QPixmap:
         return QPixmap.fromImage(self._image)
@@ -58,6 +62,11 @@ class Map:
                 y_res += y_inc
             x_res += x_inc
 
+    def init_zero(self):
+        for x in range(self.w):
+            for y in range(self.h):
+                self.set_resistance(x, y, 0)
+
     def brush(self, x: int, y: int):
         start_x = 0 if x < self.BRUSH_RADIUS else x - self.BRUSH_RADIUS
         end_x = self.w if x + self.BRUSH_RADIUS > self.w else x + self.BRUSH_RADIUS
@@ -71,3 +80,9 @@ class Map:
                     self.set_resistance(x, y, -self.RESISTANCE_RANGE)
                 else:
                     self.set_resistance(x, y, resistance + self.BRUSH_STEP)
+
+    def set_trace(self, point: QPointF, color: str = 'black'):
+        self._image.setPixel(
+            point.toPoint(),
+            QColor(color).rgb()
+        )
