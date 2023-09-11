@@ -10,6 +10,7 @@ import numpy as np
 from PIL import Image
 
 from car import Car
+from kalman import KalmanCar
 from map import Map
 from settings import MAP_WIDTH, MAP_HEIGHT, FRAME_TIME
 from trace import TraceCar
@@ -95,6 +96,12 @@ class MainWindow(QMainWindow):
                 self.activate_event('right')
             elif key == 16777237:
                 self.activate_event('back')
+        # r
+        if key == 82:
+            self.cars.append(
+                Car(self.map, 'red', True)
+            )
+            self.update()
         # t
         if key == 84:
             self.cars.append(
@@ -105,6 +112,12 @@ class MainWindow(QMainWindow):
         if key == 89:
             self.cars.append(
                 TraceCar(self.map, 'blue')
+            )
+            self.update()
+        # u
+        if key == 85:
+            self.cars.append(
+                KalmanCar(self.map, 'purple')
             )
             self.update()
         # z

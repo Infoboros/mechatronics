@@ -1,3 +1,5 @@
+from random import random
+
 from PyQt6.QtCore import QPointF
 from PyQt6.QtGui import QImage, QPixmap, QColor
 
@@ -58,7 +60,7 @@ class Map:
         for x in range(self.w):
             y_res = -self.RESISTANCE_RANGE
             for y in range(self.h):
-                self.set_resistance(x, y, (x_res + y_res) / 2)
+                self.set_resistance(x, y, y_res)
                 y_res += y_inc
             x_res += x_inc
 
