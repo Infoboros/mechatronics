@@ -6,60 +6,23 @@ class TraceCar(Car):
 
     def __init__(self, map: Map, trace_color: str, with_abs: bool = False):
         super().__init__(map, trace_color, with_abs)
-        self.steps = [
-                         'forward'
-                     ] * 160 + \
-                     [''] * 500 + \
-                     [
-                         'right', ''
-                     ] * 109 + \
-                     [''] * 500 + \
-                     [
-                         'forward'
-                     ] * 100 + \
-                     [''] * 500 + \
-                     [
-                         'left', ''
-                     ] * 109 + \
-                     [''] * 500 + \
-                     [
-                         'forward'
-                     ] * 100 + \
-                     [''] * 500 + \
-                     [
-                         'right', ''
-                     ] * 109 + \
-                     [''] * 500 + \
-                     [
-                         'forward'
-                     ] * 100 + \
-                     [''] * 500 + \
-                     [
-                         'left', ''
-                     ] * 109 + \
-                     [''] * 500 + \
-                     [
-                         'forward'
-                     ] * 100 + \
-                     [''] * 500 + \
-                     [
-                         'right', ''
-                     ] * 109 + \
-                     [''] * 500 + \
-                     [
-                         'forward'
-                     ] * 100 + \
-                     [''] * 500 + \
-                     [
-                         'left', ''
-                     ] * 109 + \
-                     [''] * 500 + \
-                     [''] * 500 + \
-                     [
-                         'forward'
-                     ] * 100 + \
-                     [''] * 500
-        
+        self.steps = \
+            ['left'] * 183 + \
+            [''] * 100 + \
+            ['forward'] * 200 + \
+            [''] * 80 + \
+            ['right'] * 365 + \
+            [''] * 80 + \
+            ['forward'] * 50 + \
+            [''] * 130 + \
+            ['left'] * 365 + \
+            [''] * 100 + \
+            ['forward'] * 170 + \
+            [''] * 80 + \
+            ['right'] * 365 + \
+            [''] * 80 + \
+            ['forward'] * 30
+
     def step(self):
         super().step()
         if not self.steps:

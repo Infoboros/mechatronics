@@ -45,7 +45,7 @@ class Map:
 
     def get_resistance(self, x: int, y: int) -> float:
         try:
-            return self._map[x][y]
+            return self._map[x][y] + self.RESISTANCE_RANGE / 2
         except KeyError:
             return 0
 
