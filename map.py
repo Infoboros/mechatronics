@@ -1,9 +1,9 @@
 from random import random
 
-from PyQt6.QtCore import QPointF
-from PyQt6.QtGui import QImage, QPixmap, QColor
+from PyQt6.QtCore import QPointF, QPoint
+from PyQt6.QtGui import QImage, QPixmap, QColor, QPainter
 
-from settings import MAP_WIDTH, MAP_HEIGHT, GRADIENT_RESISTANCE_FILL
+from settings import MAP_WIDTH, MAP_HEIGHT, GRADIENT_RESISTANCE_FILL, WHEEL_LENGTH
 
 
 class Map:
@@ -14,6 +14,7 @@ class Map:
     RESISTANCE_CENTER = 0.0
 
     def __init__(self):
+        self.break_points = []
         self.w = MAP_WIDTH
         self.h = MAP_HEIGHT
         self._map = {
@@ -88,3 +89,18 @@ class Map:
             point.toPoint(),
             QColor(color).rgb()
         )
+
+    def paint_break_points(self, painter: QPainter):
+        painter.setBrush(QColor('purple'))
+        for break_point in self.break_points:
+            painter.drawEllipse(
+                break_point,
+                WHEEL_LENGTH,
+                WHEEL_LENGTH
+            )
+
+    def add_break_point(self, point: QPoint):
+        self.break_points.append(point)
+
+    def clean_break_points(self):
+        self.break_points = []

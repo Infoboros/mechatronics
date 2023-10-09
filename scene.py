@@ -53,12 +53,19 @@ class MainWindow(QMainWindow):
     def paintEvent(self, e):
         painter = QPainter(self)
         self.paint_resistance(painter)
+        self.map.paint_break_points(painter)
         for car in self.cars:
             car.draw(painter)
 
-    def mouseReleaseEvent(self, a0: typing.Optional[QtGui.QMouseEvent]) -> None:
-        point = a0.pos()
-        self.map.brush(point.x(), point.y())
+    def mouseReleaseEvent(self, mouse_event: typing.Optional[QtGui.QMouseEvent]) -> None:
+        point = mouse_event.pos()
+        button = mouse_event.button()
+
+        if button is Qt.MouseButton.LeftButton:
+            self.map.brush(point.x(), point.y())
+        elif button is Qt.MouseButton.RightButton:
+            self.map.add_break_point(point)
+
         self.update()
 
     def start(self):
@@ -126,6 +133,9 @@ class MainWindow(QMainWindow):
         # space
         if key == 32:
             self.start()
+        # b
+        if key == 66:
+            self.map.clean_break_points()
 
     def keyReleaseEvent(self, a0: typing.Optional[QtGui.QKeyEvent]) -> None:
         key = a0.key()
