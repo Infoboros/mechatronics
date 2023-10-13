@@ -164,7 +164,7 @@ def get_agent(env):
     # где хранится "опыт" агента:
     memory = SequentialMemory(limit=100000, window_length=1)
 
-    random_process = GaussianWhiteNoiseProcess(size=nb_actions, mu=0., sigma=1)
+    random_process = OrnsteinUhlenbeckProcess(size=nb_actions, theta=.15, mu=0., sigma=.3)
     # Создаем agent из класса DDPGAgent
     agent = DDPGAgent(nb_actions=nb_actions, actor=actor, critic=critic, critic_action_input=action_input,
                       memory=memory,
