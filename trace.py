@@ -23,8 +23,8 @@ class TraceCar(Car):
             [''] * 80 + \
             ['forward'] * 30
 
-    def step(self):
-        super().step()
+    def step_car(self):
+        super().step_car()
         if not self.steps:
             return
 

@@ -83,14 +83,14 @@ class Car:
             k = 1
         return (k * self.M / 4 + self.W / 2) * self.R ** 2
 
-    def _get_mk(self, center=None):
+    def get_mk(self, center=None):
         uk = self._get_uk(center)
         if self.with_abs:
             uk = 0.5
         return self.M / 4 * self.G * self.R * (uk + 0.7)
 
     @staticmethod
-    def _sign(value):
+    def sign(value):
         if value > 0:
             return 1
         if value < 0:
@@ -98,7 +98,7 @@ class Car:
         return 0
 
     def next_vbl(self):
-        new_vbl = self.vbl + (self.ml - self._sign(self.vbl) * self._get_mk(self.left_wheel_center)) \
+        new_vbl = self.vbl + (self.ml - self.sign(self.vbl) * self.get_mk(self.left_wheel_center)) \
                   / self._get_I(self.ml, self.left_wheel_center) \
                   * self.t
         if new_vbl * self.vbl < 0:
@@ -106,7 +106,7 @@ class Car:
         return new_vbl
 
     def next_vbr(self):
-        new_vbr = self.vbr + (self.mr - self._sign(self.vbr) * self._get_mk(self.right_wheel_center)) \
+        new_vbr = self.vbr + (self.mr - self.sign(self.vbr) * self.get_mk(self.right_wheel_center)) \
                   / self._get_I(self.mr, self.right_wheel_center) \
                   * self.t
         if new_vbr * self.vbr < 0:
@@ -123,7 +123,7 @@ class Car:
         # TODO
         if abs(self.u):
             new_u -= \
-                self._sign(self.u) * self._get_mk() / self._get_I() * self.t / 100
+                self.sign(self.u) * self.get_mk() / self._get_I() * self.t / 100
 
         if new_u * self.u < 0:
             self.w = 0
@@ -135,14 +135,14 @@ class Car:
 
         # TODO
         if abs(self.w):
-            new_w -= self._sign(self.w) * 0.1
+            new_w -= self.sign(self.w) * 0.1
 
         if new_w * self.w < 0:
             self.ipsilon = self.alfa
             return 0
         return new_w
 
-    def step(self):
+    def step_car(self):
         self.x = self.next_x()
         self.y = self.next_y()
         self.alfa = self.next_alfa()
