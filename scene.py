@@ -181,7 +181,7 @@ class MainWindow(QMainWindow):
             nb_steps=10000000,
             visualize=True,
             verbose=1,
-            nb_max_episode_steps=100,
-            log_interval=1,
-            action_repetition=10
+            nb_max_episode_steps=10000,
+            log_interval=10,
+            # action_repetition=10
         )

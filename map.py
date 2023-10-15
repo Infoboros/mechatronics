@@ -68,7 +68,7 @@ class Map:
     def init_zero(self):
         for x in range(self.w):
             for y in range(self.h):
-                self.set_resistance(x, y, 0)
+                self.set_resistance(x, y, 0.5)
 
     def brush(self, x: int, y: int):
         start_x = 0 if x < self.BRUSH_RADIUS else x - self.BRUSH_RADIUS
