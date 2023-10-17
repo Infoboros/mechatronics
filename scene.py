@@ -244,9 +244,9 @@ class MainWindow(QMainWindow):
             for index, el in enumerate(car.get_params())
         ])
         car.ml = 350
-        car.mr = 360
+        car.mr = 350
         self.cars.append(car)
-        for row in dataset:
+        for index, row in enumerate(dataset):
             x2 = np.array([
                 (el - normalize_params[index][0]) / (normalize_params[index][1] - normalize_params[index][0])
                 for index, el in enumerate(car.get_params())
@@ -257,47 +257,10 @@ class MainWindow(QMainWindow):
             car.mr = y[-1] * (normalize_params[-1][1] - normalize_params[-1][0]) + normalize_params[-1][0]
             x1 = x2
 
-
-
             print(car.ml, car.mr)
             # time.sleep(1)
             self.update()
             QEventLoop().processEvents(QEventLoop.ProcessEventsFlag.AllEvents)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            car.ml = float(row[-2])
-            car.mr = float(row[-1])
+            if index < 4000:
+                car.ml = float(row[-2])
+                car.mr = float(row[-1])
