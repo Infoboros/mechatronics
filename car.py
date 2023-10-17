@@ -66,7 +66,7 @@ class Car:
     def _get_uk(self, center=None):
         if center is None:
             projected_center = (
-                        self.get_project_matrix() * ((self.right_wheel_center + self.left_wheel_center) / 2)).toPoint()
+                    self.get_project_matrix() * ((self.right_wheel_center + self.left_wheel_center) / 2)).toPoint()
         else:
             projected_center = (self.get_project_matrix() * center).toPoint()
 
@@ -290,3 +290,18 @@ class Car:
 
     def get_center(self) -> QPointF:
         return self.get_project_matrix() * QPointF(0., 0.)
+
+    def get_params(self):
+        car = self
+        return [car.x,
+                car.y,
+                car.alfa,
+                car.vbl,
+                car.vbr,
+                car.u,
+                car.w,
+                car.ipsilon,
+                car.sign(car.vbl) * car.get_mk(car.left_wheel_center),
+                car.sign(car.vbr) * car.get_mk(car.right_wheel_center),
+                car.ml,
+                car.mr]

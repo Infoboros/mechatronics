@@ -1,3 +1,4 @@
+import random
 import time
 import typing
 from datetime import datetime
@@ -7,7 +8,7 @@ from PyQt6 import QtGui
 from PyQt6.QtCore import QRect, QPoint, Qt, QEventLoop, QPointF
 from PyQt6.QtGui import QPainter
 from PyQt6.QtWidgets import QMainWindow
-from keras import Input, Sequential
+from keras import Input, Sequential, Model
 from keras.src.layers import Dense, Concatenate, Normalization, BatchNormalization
 from keras.losses import MeanSquaredError, BinaryCrossentropy
 
@@ -185,22 +186,24 @@ class MainWindow(QMainWindow):
         return car_env
 
     def ml_init(self):
-        # input_1 = Input(12)
-        # dense_1 = Dense(32)(input_1)
-        # dense_2 = Dense(32)(dense_1)
-        # dense_3 = Dense(12)(dense_2)
-        #
-        # input_2 = Input(12)
-        # concat = Concatenate(axis=1)([dense_3, input_2])
-        # dense_2_1 = Dense(32)(concat)
-        # dense_2_2 = Dense(32)(dense_2_1)
-        # actor = Dense(12)(dense_2_2)
-        actor = Sequential()
-        actor.add(Dense(12, input_shape=(10,), activation='relu'))
-        actor.add(Dense(16, activation='sigmoid'))
-        actor.add(Dense(12, activation='sigmoid'))
-        actor.compile(loss=MeanSquaredError(), metrics=['accuracy'], optimizer='adam')
-        self.actor = actor
+        input_1 = Input(12)
+        dense_1 = Dense(32, activation='sigmoid')(input_1)
+        dense_2 = Dense(32, activation='sigmoid')(dense_1)
+        dense_3 = Dense(12, activation='relu')(dense_2)
+
+        input_2 = Input(12)
+        concat = Concatenate(axis=1)([dense_3, input_2])
+        dense_2_1 = Dense(32, activation='sigmoid')(concat)
+        dense_2_2 = Dense(32, activation='sigmoid')(dense_2_1)
+        dense_2_3 = Dense(12, activation='relu')(dense_2_2)
+        model = Model(inputs=[input_1, input_2], outputs=[dense_2_3])
+
+        # actor = Sequential()
+        # actor.add(Dense(12, input_shape=(12,), activation='relu'))
+        # actor.add(Dense(16, activation='sigmoid'))
+        # actor.add(Dense(12, activation='sigmoid'))
+        model.compile(loss=MeanSquaredError(), metrics=['accuracy'], optimizer='adam')
+        self.actor = model
         # print(actor.summary())
 
     def ml_training(self):
@@ -217,9 +220,6 @@ class MainWindow(QMainWindow):
                         )
                     )
                 )
-        for index in range(1, len(dataset)):
-            dataset[index - 1][-1] = dataset[index][-1]
-            dataset[index - 1][-2] = dataset[index][-2]
 
         normalize_params = list(map(lambda row: (min(row), max(row)), zip(*dataset)))
         normalized_dataset = [
@@ -231,39 +231,73 @@ class MainWindow(QMainWindow):
             )
             for row in dataset
         ]
-        x = np.array([
-            np.array(list(row)[:-2])
-            for row in normalized_dataset[:len(normalized_dataset) - 1]
-        ])
-        y = np.array(normalized_dataset[1:])
+        x1 = np.array(normalized_dataset[:len(normalized_dataset) - 2])
+        x2 = np.array(normalized_dataset[1:len(normalized_dataset) - 1])
+        y = np.array(normalized_dataset[2:])
         self.actor.fit(
-            x, y, epochs=500
+            [x1, x2], y, epochs=500
         )
 
         car = Car(self.map, 'blue')
+        x1 = np.array([
+            (el - normalize_params[index][0]) / (normalize_params[index][1] - normalize_params[index][0])
+            for index, el in enumerate(car.get_params())
+        ])
         car.ml = 350
-        car.mr = 350
+        car.mr = 360
         self.cars.append(car)
-        for _ in range(10000000):
-            x = np.array([
+        for row in dataset:
+            x2 = np.array([
                 (el - normalize_params[index][0]) / (normalize_params[index][1] - normalize_params[index][0])
-                for index, el in enumerate([car.x,
-                          car.y,
-                          car.alfa,
-                          car.vbl,
-                          car.vbr,
-                          car.u,
-                          car.w,
-                          car.ipsilon,
-                          car.sign(car.vbl) * car.get_mk(car.left_wheel_center),
-                          car.sign(car.vbr) * car.get_mk(car.right_wheel_center)
-                          ])
+                for index, el in enumerate(car.get_params())
             ])
             car.step_car()
-            y = self.actor.predict(np.array([x]))[0]
+            y = self.actor.predict([[x1], [x2]])[0]
             car.ml = y[-2] * (normalize_params[-2][1] - normalize_params[-2][0]) + normalize_params[-2][0]
             car.mr = y[-1] * (normalize_params[-1][1] - normalize_params[-1][0]) + normalize_params[-1][0]
+            x1 = x2
+
+
+
             print(car.ml, car.mr)
             # time.sleep(1)
             self.update()
             QEventLoop().processEvents(QEventLoop.ProcessEventsFlag.AllEvents)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            car.ml = float(row[-2])
+            car.mr = float(row[-1])
