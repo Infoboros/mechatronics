@@ -152,10 +152,10 @@ class MainWindow(QMainWindow):
         if key == 78:
             with open('dataset.txt') as ds:
                 while line := ds.readline():
-                    x, y, *_ = line.split(';')
+                    x, y, *other = line.split(';')
                     point = QPointF(float(x) / GenerateCar.MAP_DIV, float(y) / GenerateCar.MAP_DIV)
                     self.map.set_trace(point, 'purple')
-                    self.map.add_break_point(point)
+                    self.map.add_break_point(point, other[-2], other[-1])
                     self.update()
         # m
         if key == 77:
@@ -203,7 +203,7 @@ class MainWindow(QMainWindow):
             visualize=True,
             verbose=1,
             nb_max_episode_steps=10000,
-            log_interval=1,
+            log_interval=10000,
             action_repetition=10
         )
 

@@ -92,15 +92,15 @@ class Map:
 
     def paint_break_points(self, painter: QPainter):
         painter.setBrush(QColor('purple'))
-        for break_point in self.break_points:
+        for break_point, *_ in self.break_points:
             painter.drawEllipse(
                 break_point,
                 WHEEL_LENGTH,
                 WHEEL_LENGTH
             )
 
-    def add_break_point(self, point: QPoint):
-        self.break_points.append(point)
+    def add_break_point(self, point: QPoint, ml, mr):
+        self.break_points.append((point, ml, mr))
 
     def clean_break_points(self):
         self.break_points = []
