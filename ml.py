@@ -2,22 +2,18 @@ import random
 
 import numpy as np
 import rl.core as krl
-import rl.callbacks
 from PyQt6.QtCore import QEventLoop
 from keras import Sequential, Input, Model
-from keras.src.layers import Flatten, Dense, Activation, Concatenate, Normalization, BatchNormalization
+from keras.src.layers import Flatten, Dense, Activation, Concatenate, Normalization
 from keras.src.optimizers import Adam
 from math import sqrt, cos, sin, pi
-from numpy import arccos
-from rl.agents import DDPGAgent
 from rl.agents.dqn import DQNAgent
 from rl.memory import SequentialMemory
 from rl.policy import EpsGreedyQPolicy
-from rl.random import GaussianWhiteNoiseProcess, OrnsteinUhlenbeckProcess
 
 from car import Car
 from map import Map
-from settings import START_POSITION_CAR, MAP_WIDTH, MAP_HEIGHT
+from settings import MAP_WIDTH, MAP_HEIGHT
 
 
 class ActionSpace(krl.Space):

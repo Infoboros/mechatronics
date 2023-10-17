@@ -1,19 +1,21 @@
 import time
 import typing
 from datetime import datetime
-from time import sleep
 
-from PyQt6 import QtGui
-from PyQt6.QtCore import QRect, QPoint, Qt, QRectF, QThread, QEventLoop
-from PyQt6.QtGui import QPainter, QBrush, QPen, QColor, QPixmap
-from PyQt6.QtWidgets import QMainWindow
 import numpy as np
-from PIL import Image
+from PyQt6 import QtGui
+from PyQt6.QtCore import QRect, QPoint, Qt, QEventLoop, QPointF
+from PyQt6.QtGui import QPainter
+from PyQt6.QtWidgets import QMainWindow
+from keras import Input, Sequential
+from keras.src.layers import Dense, Concatenate, Normalization, BatchNormalization
+from keras.losses import MeanSquaredError, BinaryCrossentropy
 
 from car import Car
+from generate_car import GenerateCar
 from kalman import KalmanCar
 from map import Map
-from ml import get_agent, CarEnv
+from ml import CarEnv
 from settings import MAP_WIDTH, MAP_HEIGHT, FRAME_TIME
 from trace import TraceCar
 
@@ -112,9 +114,7 @@ class MainWindow(QMainWindow):
                 self.activate_event('back')
         # r
         if key == 82:
-            self.cars.append(
-                Car(self.map, 'red', True)
-            )
+            self._get_ml_env()
             self.update()
         # t
         if key == 84:
@@ -142,14 +142,28 @@ class MainWindow(QMainWindow):
             self.start()
         # b
         if key == 66:
-            self.map.clean_break_points()
-
+            with open('dataset.txt', 'w') as ds:
+                ds.write('')
+            self.cars.append(
+                GenerateCar(self.map, 'purple')
+            )
+            self.update()
+        # n
+        if key == 78:
+            with open('dataset.txt') as ds:
+                while line := ds.readline():
+                    x, y, *_ = line.split(';')
+                    self.map.set_trace(QPointF(float(x) / GenerateCar.MAP_DIV, float(y) / GenerateCar.MAP_DIV),
+                                       'purple')
+                    self.update()
         # m
         if key == 77:
             self.ml_init()
         # s
         if key == 83:
             self.ml_training()
+
+        print(key)
 
     def keyReleaseEvent(self, a0: typing.Optional[QtGui.QKeyEvent]) -> None:
         key = a0.key()
@@ -171,17 +185,85 @@ class MainWindow(QMainWindow):
         return car_env
 
     def ml_init(self):
-        self.agent, self.actor = get_agent(self._get_ml_env())
+        # input_1 = Input(12)
+        # dense_1 = Dense(32)(input_1)
+        # dense_2 = Dense(32)(dense_1)
+        # dense_3 = Dense(12)(dense_2)
+        #
+        # input_2 = Input(12)
+        # concat = Concatenate(axis=1)([dense_3, input_2])
+        # dense_2_1 = Dense(32)(concat)
+        # dense_2_2 = Dense(32)(dense_2_1)
+        # actor = Dense(12)(dense_2_2)
+        actor = Sequential()
+        actor.add(Dense(12, input_shape=(10,), activation='relu'))
+        actor.add(Dense(16, activation='sigmoid'))
+        actor.add(Dense(12, activation='sigmoid'))
+        actor.compile(loss=MeanSquaredError(), metrics=['accuracy'], optimizer='adam')
+        self.actor = actor
+        # print(actor.summary())
 
     def ml_training(self):
-        # Обучим процесс на nb_steps шагах,
-        # nb_max_episode_steps ограничивает количество шагов в одном эпизоде
-        self.agent.fit(
-            self._get_ml_env(),
-            nb_steps=10000000,
-            visualize=True,
-            verbose=1,
-            nb_max_episode_steps=10000,
-            log_interval=10,
-            # action_repetition=10
+        dataset = []
+        with open('dataset.txt') as ds:
+            while line := ds.readline():
+                dataset.append(
+                    np.array(
+                        list(
+                            map(
+                                float,
+                                line.split(';')
+                            )
+                        )
+                    )
+                )
+        for index in range(1, len(dataset)):
+            dataset[index - 1][-1] = dataset[index][-1]
+            dataset[index - 1][-2] = dataset[index][-2]
+
+        normalize_params = list(map(lambda row: (min(row), max(row)), zip(*dataset)))
+        normalized_dataset = [
+            np.array(
+                [
+                    (el - normalize_params[index][0]) / (normalize_params[index][1] - normalize_params[index][0])
+                    for index, el in enumerate(row)
+                ]
+            )
+            for row in dataset
+        ]
+        x = np.array([
+            np.array(list(row)[:-2])
+            for row in normalized_dataset[:len(normalized_dataset) - 1]
+        ])
+        y = np.array(normalized_dataset[1:])
+        self.actor.fit(
+            x, y, epochs=500
         )
+
+        car = Car(self.map, 'blue')
+        car.ml = 350
+        car.mr = 350
+        self.cars.append(car)
+        for _ in range(10000000):
+            x = np.array([
+                (el - normalize_params[index][0]) / (normalize_params[index][1] - normalize_params[index][0])
+                for index, el in enumerate([car.x,
+                          car.y,
+                          car.alfa,
+                          car.vbl,
+                          car.vbr,
+                          car.u,
+                          car.w,
+                          car.ipsilon,
+                          car.sign(car.vbl) * car.get_mk(car.left_wheel_center),
+                          car.sign(car.vbr) * car.get_mk(car.right_wheel_center)
+                          ])
+            ])
+            car.step_car()
+            y = self.actor.predict(np.array([x]))[0]
+            car.ml = y[-2] * (normalize_params[-2][1] - normalize_params[-2][0]) + normalize_params[-2][0]
+            car.mr = y[-1] * (normalize_params[-1][1] - normalize_params[-1][0]) + normalize_params[-1][0]
+            print(car.ml, car.mr)
+            # time.sleep(1)
+            self.update()
+            QEventLoop().processEvents(QEventLoop.ProcessEventsFlag.AllEvents)
