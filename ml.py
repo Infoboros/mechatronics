@@ -2,18 +2,22 @@ import random
 
 import numpy as np
 import rl.core as krl
+import rl.callbacks
 from PyQt6.QtCore import QEventLoop
 from keras import Sequential, Input, Model
-from keras.src.layers import Flatten, Dense, Activation, Concatenate, Normalization
+from keras.src.layers import Flatten, Dense, Activation, Concatenate, Normalization, BatchNormalization
 from keras.src.optimizers import Adam
 from math import sqrt, cos, sin, pi
+from numpy import arccos
+from rl.agents import DDPGAgent
 from rl.agents.dqn import DQNAgent
 from rl.memory import SequentialMemory
-from rl.policy import EpsGreedyQPolicy
+from rl.policy import EpsGreedyQPolicy, LinearAnnealedPolicy
+from rl.random import GaussianWhiteNoiseProcess, OrnsteinUhlenbeckProcess
 
 from car import Car
 from map import Map
-from settings import MAP_WIDTH, MAP_HEIGHT
+from settings import START_POSITION_CAR, MAP_WIDTH, MAP_HEIGHT
 
 
 class ActionSpace(krl.Space):
@@ -47,7 +51,7 @@ class ObservationSpace(krl.Space):
 
 class CarEnv(krl.Env):
     # TODO
-    reward_range = (-50, 50)  # (-np.inf, np.inf)
+    reward_range = (-75, 75)  # (-np.inf, np.inf)
 
     def __init__(self, map: Map, trace_color: str, scene):
         self.map = map
@@ -86,7 +90,6 @@ class CarEnv(krl.Env):
 
     def step(self, action):
         prev_x, prev_y = self.car.x, self.car.y
-
         if action == 0:
             self.car.forward()
         elif action == 1:
@@ -110,6 +113,8 @@ class CarEnv(krl.Env):
                 (point.x() - self.car.x / self.car.MAP_DIV) ** 2 + (point.y() - self.car.y / self.car.MAP_DIV) ** 2)
             prev_distance = sqrt(
                 (point.x() - prev_x / self.car.MAP_DIV) ** 2 + (point.y() - prev_y / self.car.MAP_DIV) ** 2)
+            if distance < 50:
+                self.map.break_points = self.map.break_points[1:]
             if prev_distance > distance:
                 reward = 0
                 tdv_x, tdv_y = (point.x() - self.car.x / self.car.MAP_DIV), (point.y() - self.car.y / self.car.MAP_DIV)
@@ -117,15 +122,12 @@ class CarEnv(krl.Env):
                 diff_angel = np.arccos(
                     (idv_x * tdv_x + idv_y * tdv_y) / sqrt(tdv_x ** 2 + tdv_y ** 2) / sqrt(idv_x ** 2 + idv_y ** 2))
                 reward += (pi - diff_angel) * (50 / pi)
-
             elif abs(prev_distance - distance) < 1:
                 reward = -50
             else:
                 reward = -25
             done = False
-            if distance < 50:
-                self.map.break_points = self.map.break_points[1:]
-                reward = 50
+
 
         self.scene.update()
         QEventLoop().processEvents(QEventLoop.ProcessEventsFlag.AllEvents)
@@ -141,39 +143,15 @@ class CarEnv(krl.Env):
 def get_agent(env):
     nb_actions = env.action_space.shape[0]
 
-    actor = Sequential()
-    actor.add(Flatten(input_shape=(1,) + env.observation_space.shape))
-    actor.add(Normalization())
-    actor.add(Dense(128))
-    actor.add(Normalization())
-    actor.add(Activation('sigmoid'))
-    actor.add(Dense(64))
-    actor.add(Normalization())
-    actor.add(Activation('sigmoid'))
-    actor.add(Dense(32))
-    actor.add(Normalization())
-    actor.add(Activation('sigmoid'))
-    actor.add(Dense(16))
-    actor.add(Normalization())
-    actor.add(Activation('sigmoid'))
-    actor.add(Normalization())
-    actor.add(Dense(nb_actions))
-    actor.add(Activation('relu'))
-    print(actor.summary())
+    input = Input(shape=(1, env.observation_space.shape[0]))
+    x = Flatten()(input)
+    x = Dense(16, activation='relu')(x)
+    x = Dense(32, activation='relu')(x)
+    x = Dense(16, activation='relu')(x)
+    output = Dense(nb_actions, activation='linear')(x)
+    model = Model(inputs=input, outputs=output)
+    print(model.summary())
 
-    # Построим модель критика. Подаем среду и действие, получаем награду
-    action_input = Input(shape=(nb_actions,), name='action_input')
-    observation_input = Input(shape=(1,) + env.observation_space.shape, name='observation_input')
-    flattened_observation = Flatten()(observation_input)
-    x = Concatenate()([action_input, flattened_observation])
-    x = Dense(8)(x)
-    x = Activation('relu')(x)
-    x = Dense(16)(x)
-    x = Activation('relu')(x)
-    x = Dense(1)(x)
-    x = Activation('linear')(x)
-    critic = Model(inputs=[action_input, observation_input], outputs=x)
-    print(critic.summary())
 
     # Keras-RL предоставляет нам класс, rl.memory.SequentialMemory
     # где хранится "опыт" агента:
@@ -186,8 +164,9 @@ def get_agent(env):
     #                   random_process=random_process, gamma=.99, target_model_update=1)
     # agent = DQNAgent(model=actor, memory=memory, nb_actions=nb_actions)
     # agent.compile(Adam())
-    policy = EpsGreedyQPolicy(eps=0.1)
-    dqn = DQNAgent(model=actor, nb_actions=nb_actions, memory=memory, nb_steps_warmup=100,
-                   policy=policy)
-    dqn.compile(Adam(lr=1e-3), metrics=['mae'])
-    return dqn, actor
+    policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), attr='eps', value_max=1., value_min=.1, value_test=.05, nb_steps=10000)
+    dqn = DQNAgent(model=model, nb_actions=nb_actions, memory=memory, nb_steps_warmup=10,
+               target_model_update=1e-2, policy=policy)
+    dqn.compile(Adam(lr=1e-3), metrics=['accuracy'])
+    return dqn, model
+
