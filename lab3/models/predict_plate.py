@@ -6,7 +6,7 @@ from PyQt6.QtGui import QVector3D, QMatrix4x4
 from models.model import Model
 
 
-class Plate(Model):
+class PredictPlate(Model):
     CIRCLE_RADIANS = 6.29
 
     UP = 0.02
